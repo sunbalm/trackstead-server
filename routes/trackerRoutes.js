@@ -15,6 +15,8 @@ const {
   validateFields,
   validateMilestones
 } = require("../utils/validation");
+const TrackerEntry = require("../models/TrackerEntry");
+const TrackerReset = require("../models/TrackerReset");
 
 const router = express.Router();
 
@@ -287,6 +289,49 @@ router.post("/:trackerId/duplicate", requireAuth, async (req, res) => {
 
     res.status(500).json({
       message: "Could not duplicate tracker."
+    });
+  }
+});
+
+router.delete("/:trackerId/permanent", requireAuth, async (req, res) => {
+  try {
+    const user = await getDbUser(req.firebaseUser);
+
+    const tracker = await Tracker.findOne({
+      _id: req.params.trackerId,
+      userId: user._id,
+      archived: true
+    });
+
+    if (!tracker) {
+      return res.status(404).json({
+        message: "Archived tracker not found."
+      });
+    }
+
+    await TrackerEntry.deleteMany({
+      trackerId: tracker._id,
+      userId: user._id
+    });
+
+    await TrackerReset.deleteMany({
+      trackerId: tracker._id,
+      userId: user._id
+    });
+
+    await Tracker.deleteOne({
+      _id: tracker._id,
+      userId: user._id
+    });
+
+    res.json({
+      success: true
+    });
+  } catch (error) {
+    console.error("Permanent delete tracker error:", error.message);
+
+    res.status(500).json({
+      message: "Could not permanently delete tracker."
     });
   }
 });
