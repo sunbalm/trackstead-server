@@ -15,8 +15,6 @@ const {
   validateFields,
   validateMilestones
 } = require("../utils/validation");
-const TrackerEntry = require("../models/TrackerEntry");
-const TrackerReset = require("../models/TrackerReset");
 
 const router = express.Router();
 
